@@ -1,15 +1,14 @@
-import axios from 'axios';
-
 export default async function handler(request, response) {
+  // Preluăm datele trimise de wasenderapi.com
   const webhookPayload = request.body;
   
+  // Preluăm din variabilele de mediu URL-ul secret n8n și JID-ul botului
   const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
   const MY_BOT_JID = process.env.MY_BOT_JID;
-  // Preluăm secretul pentru autentificare
-  const N8N_WEBHOOK_AUTH_SECRET = process.env.N8N_WEBHOOK_AUTH_SECRET;
+  const N8N_WEBHOOK_AUTH_SECRET = process.env.N8N_WEBHOOK_AUTH_SECRET; // Pentru autentificare (dacă e cazul)
 
-  if (!N8N_WEBHOOK_URL || !MY_BOT_JID || !N8N_WEBHOOK_AUTH_SECRET) {
-    console.error("Variabilele de mediu nu sunt configurate complet!");
+  if (!N8N_WEBHOOK_URL || !MY_BOT_JID) {
+    console.error("Variabilele de mediu nu sunt configurate!");
     return response.status(200).send('OK');
   }
 
@@ -18,13 +17,18 @@ export default async function handler(request, response) {
   if (mentionedJids.includes(MY_BOT_JID)) {
     console.log('Botul a fost menționat! Se trimite către n8n...');
     try {
-      // Configurăm request-ul către n8n
-      await axios.post(N8N_WEBHOOK_URL, webhookPayload, {
-        // ADAUGĂM AICI HEADER-UL DE AUTENTIFICARE
+      // AM ÎNLOCUIT axios.post CU fetch
+      await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
         headers: {
-          'n8n-webhook-secret': N8N_WEBHOOK_AUTH_SECRET
-        }
+          'Content-Type': 'application/json',
+          // Adaugă header-ul de autentificare dacă l-ai configurat în n8n
+          'n8n-webhook-secret': N8N_WEBHOOK_AUTH_SECRET 
+        },
+        // Body-ul trebuie transformat manual în text JSON
+        body: JSON.stringify(webhookPayload) 
       });
+
     } catch (error) {
       console.error('Eroare la trimiterea către n8n:', error.message);
     }
@@ -32,5 +36,6 @@ export default async function handler(request, response) {
     console.log('Mesaj ignorat (fără mențiune).');
   }
 
+  // Întotdeauna răspundem cu succes
   response.status(200).send('OK');
 }
