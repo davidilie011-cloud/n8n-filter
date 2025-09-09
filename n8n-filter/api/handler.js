@@ -13,6 +13,8 @@ export default async function handler(request, response) {
   }
 
   const mentionedJids = webhookPayload?.payload?.message?.mentionedJids || [];
+  console.log('JID-uri menționate în mesaj:', mentionedJids);
+  console.log('JID-ul botului:', MY_BOT_JID);
   
   if (mentionedJids.includes(MY_BOT_JID)) {
     console.log('Botul a fost menționat! Se trimite către n8n...');
