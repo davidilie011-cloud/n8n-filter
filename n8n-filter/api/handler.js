@@ -13,6 +13,7 @@ export default async function handler(request, response) {
   }
 
   const mentionedJids = webhookPayload?.payload?.message?.mentionedJids || [];
+  console.log('Payload primit:', JSON.stringify(webhookPayload, null, 2));
   console.log('JID-uri menționate în mesaj:', mentionedJids);
   console.log('JID-ul botului:', MY_BOT_JID);
   
