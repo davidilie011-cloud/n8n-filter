@@ -18,7 +18,9 @@ export default async function handler(request, response) {
   
   // Preluăm din variabilele de mediu URL-ul secret n8n și JID-ul botului
   const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
+  const N8N_WEBHOOK_URL_CONFIG = process.env.N8N_WEBHOOK_URL_CONFIG;
   const MY_BOT_JID = process.env.MY_BOT_JID;
+  const MY_CONFIG_ID = process.env.MY_CONFIG_ID;
   const N8N_WEBHOOK_AUTH_SECRET = process.env.N8N_WEBHOOK_AUTH_SECRET; // Pentru autentificare (dacă e cazul)
 
   if (!N8N_WEBHOOK_URL || !MY_BOT_JID) {
@@ -26,12 +28,27 @@ export default async function handler(request, response) {
     return response.status(200).send('OK');
   }
 
+  const configNumber = webhookPayload?.data?.messages?.key?.participant;
   const groupId = webhookPayload?.data?.messages?.key?.remoteJid;
   const mentionedJids = webhookPayload?.data?.messages?.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
   console.log('Payload primit:', JSON.stringify(webhookPayload, null, 2));
   console.log('JID-uri menționate în mesaj:', mentionedJids);
   console.log('JID-ul botului:', MY_BOT_JID);
   console.log('Group ID:', groupId);
+
+  if (configNumber === MY_CONFIG_ID) {
+    await fetch(N8N_WEBHOOK_URL_CONFIG, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // Adaugă header-ul de autentificare dacă l-ai configurat în n8n
+            'n8n-webhook-secret': N8N_WEBHOOK_AUTH_SECRET 
+          },
+          // Body-ul trebuie transformat manual în text JSON
+          body: JSON.stringify(webhookPayload) 
+        });
+    return response.status(200).send('OK');
+  }
 
   if (mentionedJids.includes(MY_BOT_JID)) {
     console.log('Botul a fost menționat! Se trimite către n8n...');
